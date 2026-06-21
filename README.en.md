@@ -1,5 +1,5 @@
 <div align=center>
-<img src="src\celemod-ui\src\resources\Celemod.png" />
+<img src="public/Celemod.png" />
 
 # CeleMod
 

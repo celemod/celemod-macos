@@ -1,7 +1,22 @@
 [English](./README.en.md)
 
+在原仓库的基础上针对 macOS 端做了修复，改用了新的 UI ，也改用了新的后端方式(Tauri v2)，几乎全程 Claude Code+DeepSeek v4 Flash ，UI 大多为人工来改。目前可用，但仍有一些已知的问题，没意外的话应该不会修了，多为 UI 优化问题，因为太难改了。
+
+- 主页功能，语言问题默认是英文，`&&` 是中文，下次启动后仍然会自动切换会英文，所以每次启动都要手动改中文。
+- Everest 功能，**建议直接使用 Olympus 来操作**。因为这个页面样式没有修复，点击安装不会实时提供安装进度情况，实际上到最后仍然会安装成功的。
+
+下载： [Github](https://github.com/2nthony/CeleMod/releases/latest) · [夸克网盘(提取码DT5A)](https://pan.quark.cn/s/4b0236b69dd9)
+
+打不开可以尝试使用终端app输入以下内容并回车。
+
+```sh
+xattr -rd com.apple.quarantine /Applications/CeleMod.app
+```
+
+---
+
 <div align=center>
-<img src="src\celemod-ui\src\resources\Celemod.png" />
+<img src="public/Celemod.png" />
 
 # CeleMod
 
@@ -44,9 +59,3 @@ An alternative mod manager for Celeste
 ### Credits
 
 [@WEGFan](https://github.com/WEGFan) 提供镜像和社区 API、蔚蓝实现等相关知识
-
-### 其它
-
-我们使用的 Sciter 版本是 `5.0.2.17`，你可以在这里找到其预构建二进制：
-
-https://gitlab.com/sciter-engine/sciter-js-sdk/-/blob/5.0.2.17/bin/
