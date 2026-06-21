@@ -18,6 +18,7 @@ import { useGlobalContext } from '../App'
 import { enforceEverest } from '../components/EnforceEverestPage'
 import { createPopup, PopupContext } from '../components/Popup'
 import { ProgressIndicator } from '../components/Progress'
+import { Checkbox, Heading, Input } from '@heroui/react'
 
 type DepState = 'resolved' | 'missing' | 'not-enabled' | 'mismatched-version'
 
@@ -145,7 +146,7 @@ const ModMissing = ({ name, version, optional }: MissingModDepInfo) => {
   }, [name])
 
   return (
-    <div className="m-mod missing">
+    <div className="m-mod missing flex items-center gap-x-1">
       <Icon name="warn" />
       <ModBadge
         bg={optional ? '#3ca3f4' : '#ef4647'}
@@ -246,170 +247,173 @@ const ModLocal = ({
   }, [editingComment])
 
   return (
-    <div
-      className={`m-mod ${enabled && 'enabled'}`}
-      key={id}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      <span
-        className={`expandBtn ${expanded && 'expanded'} ${hasDeps && 'clickable'}`}
-        onClick={() => setExpanded(!expanded)}
+    <div>
+      <div
+        className={`m-mod flex items-center gap-x-1 ${enabled && 'enabled'}`}
+        key={id}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
       >
-        {hasDeps && (!optional || ctx?.fullTree) ? (
-          expanded ? (
-            <Icon name="i-down" />
+        <span
+          className={`expandBtn  ${expanded && 'expanded'} ${hasDeps && 'clickable'}`}
+          onClick={() => setExpanded(!expanded)}
+        >
+          {hasDeps && (!optional || ctx?.fullTree) ? (
+            expanded ? (
+              <Icon name="i-down" />
+            ) : (
+              <Icon name="i-right" />
+            )
           ) : (
-            <Icon name="i-right" />
-          )
-        ) : (
-          <Icon name="i-asterisk" />
+            <Icon name="i-asterisk" />
+          )}
+        </span>
+        <ModBadge
+          bg={isAlwaysOn ? '#087EBF' : enabled ? '#4caf50' : '#2c313c'}
+          color="white"
+          onClick={() => {
+            ctx?.switchMod(name, !enabled)
+          }}
+          onContextMenu={() => {
+            ctx?.switchAlwaysOn(name, !isAlwaysOn)
+          }}
+        >
+          {isAlwaysOn ? i18n.t('始终开启') : enabled ? i18n.t('已启用') : i18n.t('已禁用')}
+        </ModBadge>
+
+        {enabled &&
+          (depState.status === 'missing' ? (
+            <ModBadge bg="#ef4647" color="white" title={depState.message}>
+              {i18n.t('依赖·缺失')}
+            </ModBadge>
+          ) : depState.status === 'not-enabled' ? (
+            <ModBadge bg="#ff9800" color="white" title={depState.message}>
+              {i18n.t('依赖·未启用')}
+            </ModBadge>
+          ) : depState.status === 'mismatched-version' ? (
+            <ModBadge bg="#ff9800" color="white" title={depState.message}>
+              {i18n.t('依赖·版本不匹配')}
+            </ModBadge>
+          ) : null)}
+
+        {hasCycle && (
+          <ModBadge bg="#9c27b0" color="white">
+            {i18n.t('循环依赖')}
+          </ModBadge>
         )}
-      </span>
-      <ModBadge
-        bg={isAlwaysOn ? '#087EBF' : enabled ? '#4caf50' : '#2c313c'}
-        color="white"
-        onClick={() => {
-          ctx?.switchMod(name, !enabled)
-        }}
-        onContextMenu={() => {
-          ctx?.switchAlwaysOn(name, !isAlwaysOn)
-        }}
-      >
-        {isAlwaysOn ? i18n.t('始终开启') : enabled ? i18n.t('已启用') : i18n.t('已禁用')}
-      </ModBadge>
 
-      {enabled &&
-        (depState.status === 'missing' ? (
-          <ModBadge bg="#ef4647" color="white" title={depState.message}>
-            {i18n.t('依赖·缺失')}
+        {optional && (
+          <ModBadge bg="#ff9800" color="white">
+            {i18n.t('可选依赖')}
           </ModBadge>
-        ) : depState.status === 'not-enabled' ? (
-          <ModBadge bg="#ff9800" color="white" title={depState.message}>
-            {i18n.t('依赖·未启用')}
+        )}
+
+        {dependedByFiltered.length > 0 && (
+          <ModBadge
+            bg="#2196f3"
+            color="white"
+            title={i18n.t('启用的，依赖此 Mod 的 Mod: {slot0}', {
+              slot0: dependedByFiltered.map((v) => v.name).join(', '),
+            })}
+          >
+            {dependedByFiltered.length}
           </ModBadge>
-        ) : depState.status === 'mismatched-version' ? (
-          <ModBadge bg="#ff9800" color="white" title={depState.message}>
-            {i18n.t('依赖·版本不匹配')}
+        )}
+
+        {duplicateCount > 1 && (
+          <ModBadge
+            bg="#DB3D73"
+            color="white"
+            title={duplicateFiles.map((v) => v.split('/').pop()).join(' | ')}
+          >
+            {i18n.t('重复 Mod ·')}
+
+            {duplicateCount}
+            {i18n.t('次')}
           </ModBadge>
-        ) : null)}
+        )}
 
-      {hasCycle && (
-        <ModBadge bg="#9c27b0" color="white">
-          {i18n.t('循环依赖')}
-        </ModBadge>
-      )}
+        {ctx?.showUpdate && updateState && (
+          <ModBadge
+            bg="#ff9800"
+            color="white"
+            onClick={() => {
+              download.downloadMod(file.slice(0, -'.zip'.length), updateState[0], {
+                onProgress: (task, progress) => {
+                  setUpdateString(`${progress}% (${task.subtasks.length})`)
+                },
+                onFinished: () => {
+                  setUpdateString(i18n.t('下载完成'))
+                  ctx?.reloadMods()
+                },
+                onFailed: (task) => {
+                  console.log(task)
+                  setUpdateString(i18n.t('下载失败'))
+                },
+                force: true,
+              })
+            }}
+          >
+            {updateString}
+          </ModBadge>
+        )}
 
-      {optional && (
-        <ModBadge bg="#ff9800" color="white">
-          {i18n.t('可选依赖')}
-        </ModBadge>
-      )}
-
-      {dependedByFiltered.length > 0 && (
-        <ModBadge
-          bg="#2196f3"
-          color="white"
-          title={i18n.t('启用的，依赖此 Mod 的 Mod: {slot0}', {
-            slot0: dependedByFiltered.map((v) => v.name).join(', '),
-          })}
-        >
-          {dependedByFiltered.length}
-        </ModBadge>
-      )}
-
-      {duplicateCount > 1 && (
-        <ModBadge
-          bg="#DB3D73"
-          color="white"
-          title={duplicateFiles.map((v) => v.split('/').pop()).join(' | ')}
-        >
-          {i18n.t('重复 Mod ·')}
-
-          {duplicateCount}
-          {i18n.t('次')}
-        </ModBadge>
-      )}
-
-      {ctx?.showUpdate && updateState && (
-        <ModBadge
-          bg="#ff9800"
-          color="white"
-          onClick={() => {
-            download.downloadMod(file.slice(0, -'.zip'.length), updateState[0], {
-              onProgress: (task, progress) => {
-                setUpdateString(`${progress}% (${task.subtasks.length})`)
-              },
-              onFinished: () => {
-                setUpdateString(i18n.t('下载完成'))
-                ctx?.reloadMods()
-              },
-              onFailed: (task) => {
-                console.log(task)
-                setUpdateString(i18n.t('下载失败'))
-              },
-              force: true,
-            })
-          }}
-        >
-          {updateString}
-        </ModBadge>
-      )}
-
-      <span
-        className="modName"
-        onClick={() => setEditingComment(true)}
-        onContextMenu={(e) => {
-          e.preventDefault()
-          callRemote('open_url', ctx?.modFolder || '')
-        }}
-      >
-        {name}
-      </span>
-      {!editingComment && ctx?.modComments[name] && (
         <span
-          className="modComment"
-          onClick={() => {
-            setEditingComment(true)
+          className="modName"
+          onClick={() => setEditingComment(true)}
+          onContextMenu={(e) => {
+            e.preventDefault()
+            callRemote('open_url', ctx?.modFolder || '')
           }}
         >
-          {ctx?.modComments[name]}
+          {name}
         </span>
-      )}
-      {editingComment && (
-        <input
-          type="text"
-          value={ctx?.modComments[name] ?? ''}
-          ref={refCommentInput}
-          className="modCommentInput"
-          onInput={(e) => ctx?.setModComment(name, (e.target as any).value)}
-          onKeyUp={(e) => {
-            if (e.keyCode === 257 || e.keyCode === 256) {
-              // enter or esc
-              setEditingComment(false)
-            }
-          }}
-          onBlur={() => setEditingComment(false)}
-        />
-      )}
+        {!editingComment && ctx?.modComments[name] && (
+          <span
+            className="modComment"
+            onClick={() => {
+              setEditingComment(true)
+            }}
+          >
+            {ctx?.modComments[name]}
+          </span>
+        )}
+        {editingComment && (
+          <input
+            type="text"
+            value={ctx?.modComments[name] ?? ''}
+            ref={refCommentInput}
+            className="modCommentInput"
+            onInput={(e) => ctx?.setModComment(name, (e.target as any).value)}
+            onKeyUp={(e) => {
+              if (e.keyCode === 257 || e.keyCode === 256) {
+                // enter or esc
+                setEditingComment(false)
+              }
+            }}
+            onBlur={() => setEditingComment(false)}
+          />
+        )}
 
-      <span className="modVersion">{version}</span>
-      {ctx?.showDetailed && (
-        <span className="modDetails">
-          [{formatSize(size)} · {file}]
-        </span>
-      )}
-      {hovered && (
-        <span
-          className="delete-btn"
-          onClick={() => ctx?.deleteMod(name)}
-          title={i18n.t('删除 Mod')}
-        >
-          <Icon name="delete" />
-        </span>
-      )}
+        <span className="modVersion">{version}</span>
+        {ctx?.showDetailed && (
+          <span className="modDetails">
+            [{formatSize(size)} · {file}]
+          </span>
+        )}
+        {hovered && (
+          <span
+            className="delete-btn"
+            onClick={() => ctx?.deleteMod(name)}
+            title={i18n.t('删除 Mod')}
+          >
+            <Icon name="delete" />
+          </span>
+        )}
+      </div>
+
       {(!optional || ctx?.fullTree) && expanded && !hasCycle && (
-        <div className={`childTree ${expanded && 'expanded'}`}>
+        <div className={`childTree pl-4 ${expanded && 'expanded'}`}>
           {dependencies.map((v) => (
             <Mod {...v} renderPath={[...renderPath, name]} />
           ))}
@@ -1276,20 +1280,16 @@ export const Manage = () => {
     <div className="manage">
       <modListContext.Provider value={manageCtx}>
         <div className="modList">
-          <div className="title">
-            {i18n.t('Mod 列表')}
-
-            <input
+          <Heading level={1}>{i18n.t('Mod 列表')}</Heading>
+          <div className="space-x-1 mt-2">
+            <Input
               placeholder={i18n.t('筛选 Mod')}
-              className="filter-input"
               type="text"
               value={filter}
               onChange={(e) => {
                 setFilter((e.target as any).value)
               }}
             />
-          </div>
-          <div className="opers">
             <Button
               onClick={async () => {
                 await callRemote('open_url', gamePath + '/Mods')
@@ -1297,7 +1297,6 @@ export const Manage = () => {
             >
               {i18n.t('打开 Mods 文件夹')}
             </Button>
-            &nbsp;&nbsp;
             <Button
               onClick={() => {
                 manageCtx.switchMod(
@@ -1313,7 +1312,6 @@ export const Manage = () => {
             >
               {i18n.t('禁用全部')}
             </Button>
-            &nbsp;&nbsp;
             <Button
               onClick={() => {
                 manageCtx.batchSwitchMod(
@@ -1325,79 +1323,63 @@ export const Manage = () => {
               {i18n.t('启用全部')}
             </Button>
           </div>
-          <div className="options">
-            <label>
-              <input
-                type="checkbox"
-                checked={excludeDependents}
-                onChange={(e) => {
-                  // @ts-ignore
-                  setExcludeDependents(e.target.checked)
-                }}
-              />
-              {i18n.t('只显示不被依赖的Mod')}
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={checkOptionalDep}
-                onChange={(e) => {
-                  // @ts-ignore
-                  setCheckOptionalDep(e.target.checked)
-                }}
-              />
 
-              {i18n.t('检查可选依赖')}
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={fullTree}
-                onChange={(e) => {
-                  // @ts-ignore
-                  setFullTree(e.target.checked)
-                }}
-              />
+          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3">
+            <Checkbox isSelected={excludeDependents} onChange={setExcludeDependents}>
+              <Checkbox.Content>
+                <Checkbox.Control>
+                  <Checkbox.Indicator />
+                </Checkbox.Control>
+                {i18n.t('只显示不被依赖的Mod')}
+              </Checkbox.Content>
+            </Checkbox>
 
-              {i18n.t('显示完整树')}
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={showUpdate}
-                onChange={(e) => {
-                  // @ts-ignore
-                  setShowUpdate(e.target.checked)
-                }}
-              />
+            <Checkbox isSelected={checkOptionalDep} onChange={setCheckOptionalDep}>
+              <Checkbox.Content>
+                <Checkbox.Control>
+                  <Checkbox.Indicator />
+                </Checkbox.Control>
+                {i18n.t('检查可选依赖')}
+              </Checkbox.Content>
+            </Checkbox>
 
-              {i18n.t('显示更新')}
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={autoDisableNewMods}
-                onChange={(e) => {
-                  // @ts-ignore
-                  setAutoDisableNewMods(e.target.checked)
-                }}
-              />
+            <Checkbox isSelected={fullTree} onChange={setFullTree}>
+              <Checkbox.Content>
+                <Checkbox.Control>
+                  <Checkbox.Indicator />
+                </Checkbox.Control>
+                {i18n.t('显示完整树')}
+              </Checkbox.Content>
+            </Checkbox>
 
-              {i18n.t('自动禁用新安装的Mod')}
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={showDetailed}
-                onChange={(e) => {
-                  // @ts-ignore
-                  setShowDetailed(e.target.checked)
-                }}
-              />
+            <Checkbox isSelected={showUpdate} onChange={setShowUpdate}>
+              <Checkbox.Content>
+                <Checkbox.Control>
+                  <Checkbox.Indicator />
+                </Checkbox.Control>
+                {i18n.t('显示更新')}
+              </Checkbox.Content>
+            </Checkbox>
 
-              {i18n.t('显示详细信息')}
-            </label>
+            <Checkbox isSelected={autoDisableNewMods} onChange={setAutoDisableNewMods}>
+              <Checkbox.Content>
+                <Checkbox.Control>
+                  <Checkbox.Indicator />
+                </Checkbox.Control>
+                {i18n.t('自动禁用新安装的Mod')}
+              </Checkbox.Content>
+            </Checkbox>
+
+            <Checkbox isSelected={showDetailed} onChange={setShowDetailed}>
+              <Checkbox.Content>
+                <Checkbox.Control>
+                  <Checkbox.Indicator />
+                </Checkbox.Control>
+                {i18n.t('显示详细信息')}
+              </Checkbox.Content>
+            </Checkbox>
           </div>
+
           <div
             className="opers"
             style={{
@@ -1438,7 +1420,7 @@ export const Manage = () => {
                 {hasUpdateBtnState}
               </button>
             )}
-            &nbsp;
+
             {missingDeps.length > 0 && (
               <button
                 onClick={async () => {
