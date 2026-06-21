@@ -13,7 +13,7 @@ const variantMap: Record<string, 'danger' | 'secondary' | 'tertiary' | 'outline'
 
 export const Button = (props: {
   children: any
-  large?: boolean
+  size?: 'sm' | 'md' | 'lg'
   onClick?: any
   type?: ButtonType
 }) => {
@@ -21,7 +21,8 @@ export const Button = (props: {
     <HeroButton
       onPress={props.onClick}
       variant={variantMap[props.type || 'default'] || 'secondary'}
-      size={props.large ? 'lg' : 'md'}
+      size={props.size || 'md'}
+      className={'cursor-default'}
     >
       {props.children}
     </HeroButton>
