@@ -1,6 +1,13 @@
 import { Button as HeroButton } from '@heroui/react'
 
-export type ButtonType = 'primary' | 'critical' | 'success' | 'warning' | 'info' | 'default'
+export type ButtonType =
+  | 'primary'
+  | 'critical'
+  | 'success'
+  | 'warning'
+  | 'info'
+  | 'default'
+  | 'ghost'
 
 const variantMap: Record<string, 'danger' | 'secondary' | 'tertiary' | 'outline' | 'ghost'> = {
   critical: 'danger',
@@ -9,6 +16,7 @@ const variantMap: Record<string, 'danger' | 'secondary' | 'tertiary' | 'outline'
   info: 'secondary',
   success: 'secondary',
   warning: 'secondary',
+  ghost: 'ghost',
 }
 
 export const Button = (props: {
@@ -16,13 +24,14 @@ export const Button = (props: {
   size?: 'sm' | 'md' | 'lg'
   onClick?: any
   type?: ButtonType
+  isDisabled?: boolean
 }) => {
   return (
     <HeroButton
+      isDisabled={props.isDisabled}
       onPress={props.onClick}
       variant={variantMap[props.type || 'default'] || 'secondary'}
       size={props.size || 'md'}
-      className={'cursor-default'}
     >
       {props.children}
     </HeroButton>
