@@ -1,17 +1,38 @@
 [English](./README.en.md)
 
-在[原仓库](https://github.com/std-microblock/CeleMod)的基础上针对 macOS 端做了修复，改用了新的 UI ，也改用了新的后端方式(Tauri v2)，几乎全程 Claude Code+DeepSeek v4 Flash ，UI 大多为人工来改。目前可用，但仍有一些已知的问题，没意外的话应该不会修了，多为 UI 优化问题，因为太难改了。
+在[原仓库](https://github.com/std-microblock/CeleMod)的基础上针对 macOS 端做了修复，改用了新的 UI ，也改用了新的后端方式(Tauri v2)，几乎全程 Claude Code+DeepSeek ，UI 修复大多为人工来改。目前可用，但仍有一些下列已知的问题，没意外的话应该**不会修**了。
 
-- 主页功能，语言问题默认是英文，`&&` 是中文，下次启动后仍然会自动切换会英文，所以每次启动都要手动改中文。
+- 每次打开都会卡顿一段时间
+- 主页功能
+  - Profile 不记录启动时间
+  - 语言默认是英文，`&&` 是中文，下次启动后仍然会自动切换会英文，所以每次启动都要手动改中文。
 - Everest 功能，**建议直接使用 Olympus 来操作**。因为这个页面样式没有修复，点击安装不会实时提供安装进度情况，实际上到最后仍然会安装成功的。
+- 管理功能
+  - Mod 列表删除按钮没有交互反馈
+  - Mod 排序按钮没有交互反馈
 
-下载： [Github](https://github.com/2nthony/CeleMod/releases/latest) · [夸克网盘(提取码DT5A)](https://pan.quark.cn/s/4b0236b69dd9)
+下载： [Github](https://github.com/2nthony/CeleMod/releases/latest) · [夸克(DT5A)](https://pan.quark.cn/s/4b0236b69dd9)
 
 打不开可以尝试使用终端app输入以下内容并回车。
 
 ```sh
 xattr -rd com.apple.quarantine /Applications/CeleMod.app
 ```
+
+<details>
+<summary>界面展示</summary>
+
+<img width="864" height="705" alt="Image" src="https://github.com/user-attachments/assets/07bd1d8d-3668-4743-9efc-2481a2a5ae41" />
+
+<img width="864" height="705" alt="Image" src="https://github.com/user-attachments/assets/b6caa99d-56a1-41ef-96e9-3a92634bc43b" />
+
+<img width="864" height="705" alt="Image" src="https://github.com/user-attachments/assets/3a1a8a63-ffc3-4fcd-bce0-4e68f1e5006b" />
+
+<img width="864" height="705" alt="Image" src="https://github.com/user-attachments/assets/102c679c-b475-42db-8b00-626510b5f763" />
+
+<img width="864" height="705" alt="Image" src="https://github.com/user-attachments/assets/8d3f3fee-d8c9-4124-b80b-7f347935baba" />
+
+</details>
 
 ---
 
