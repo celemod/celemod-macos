@@ -3,7 +3,7 @@ use crate::everest;
 use crate::types::*;
 use crate::ureq::{self, DownloadCallbackInfo};
 
-use anyhow::{Context, bail};
+use anyhow::{bail, Context};
 use std::collections::{HashMap, HashSet};
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -280,19 +280,24 @@ pub fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
         };
         // Skip entries that aren't mods (blacklist.txt, Cache, etc.)
         let is_dir = entry.file_type().map(|t| t.is_dir()).unwrap_or(false);
-        let is_zip = entry.path().extension().map(|e| e == "zip").unwrap_or(false);
+        let is_zip = entry
+            .path()
+            .extension()
+            .map(|e| e == "zip")
+            .unwrap_or(false);
         if !is_dir && !is_zip {
             continue;
         }
         // Skip directories that don't contain everest.yaml/everest.yml
         if is_dir {
-            let has_everest_yaml = entry.path().read_dir()
+            let has_everest_yaml = entry
+                .path()
+                .read_dir()
                 .map(|rd| {
-                    rd.filter_map(|e| e.ok())
-                        .any(|e| {
-                            let name = e.file_name().to_string_lossy().to_lowercase();
-                            name == "everest.yaml" || name == "everest.yml"
-                        })
+                    rd.filter_map(|e| e.ok()).any(|e| {
+                        let name = e.file_name().to_string_lossy().to_lowercase();
+                        name == "everest.yaml" || name == "everest.yml"
+                    })
                 })
                 .unwrap_or(false);
             if !has_everest_yaml {
@@ -301,12 +306,19 @@ pub fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
         }
         let res: anyhow::Result<_> = (|| -> anyhow::Result<LocalMod> {
             let yaml = if is_dir {
-                let yaml_path = entry.path().read_dir().unwrap().find(|v| {
-                    v.as_ref().is_ok_and(|v| {
-                        let name = v.file_name().to_string_lossy().to_string().to_lowercase();
-                        name == "everest.yaml" || name == "everest.yml"
+                let yaml_path = entry
+                    .path()
+                    .read_dir()
+                    .unwrap()
+                    .find(|v| {
+                        v.as_ref().is_ok_and(|v| {
+                            let name = v.file_name().to_string_lossy().to_string().to_lowercase();
+                            name == "everest.yaml" || name == "everest.yml"
+                        })
                     })
-                }).unwrap().unwrap().path();
+                    .unwrap()
+                    .unwrap()
+                    .path();
                 read_to_string_bom(&yaml_path)?
             } else if entry
                 .path()
@@ -326,10 +338,7 @@ pub fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
                 let mod_date = entry.metadata().unwrap().modified().unwrap();
                 let cache_date = cache_path.metadata().ok().map(|v| v.modified().unwrap());
 
-                if !cache_path.exists()
-                    || cache_date.is_none()
-                    || cache_date.unwrap() < mod_date
-                {
+                if !cache_path.exists() || cache_date.is_none() || cache_date.unwrap() < mod_date {
                     extract_mod_for_yaml(&entry.path())?;
                 }
                 read_to_string_bom(&cache_path)?
@@ -382,11 +391,7 @@ pub fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
         })();
 
         if let Err(e) = res {
-            println!(
-                "[ WARNING ] Failed to parse {:?}: {}",
-                entry.file_name(),
-                e
-            )
+            println!("[ WARNING ] Failed to parse {:?}: {}", entry.file_name(), e)
         } else {
             mods.push(res.unwrap());
         }
@@ -507,9 +512,7 @@ fn normalize_game_path_buf(path: &Path) -> PathBuf {
         }
 
         if path.extension().and_then(|v| v.to_str()) == Some("app") {
-            if let Some(resources) =
-                resources_if_valid(path.join("Contents").join("Resources"))
-            {
+            if let Some(resources) = resources_if_valid(path.join("Contents").join("Resources")) {
                 return resources;
             }
         }
@@ -581,9 +584,7 @@ pub fn start_game(path: String) {
     if let Some(game) = celestes.iter().find(|game| {
         game.path
             .as_ref()
-            .map(|p| {
-                normalize_game_path_buf(p).to_string_lossy().to_string() == path
-            })
+            .map(|p| normalize_game_path_buf(p).to_string_lossy().to_string() == path)
             .unwrap_or(false)
     }) {
         game_scanner::manager::launch_game(game).unwrap();
@@ -608,12 +609,8 @@ pub fn start_game_directly(path: String, origin: bool) {
         let direct = path.join("Celeste");
         if direct.exists() {
             direct
-        } else if path.file_name().and_then(|name| name.to_str()) == Some("Resources")
-        {
-            path.parent()
-                .unwrap_or(path)
-                .join("MacOS")
-                .join("Celeste")
+        } else if path.file_name().and_then(|name| name.to_str()) == Some("Resources") {
+            path.parent().unwrap_or(path).join("MacOS").join("Celeste")
         } else {
             direct
         }
@@ -640,11 +637,9 @@ pub fn start_game_directly(path: String, origin: bool) {
 
 #[tauri::command]
 pub async fn get_installed_mods(mods_folder_path: String) -> Vec<LocalMod> {
-    tokio::task::spawn_blocking(move || {
-        get_installed_mods_sync(mods_folder_path)
-    })
-    .await
-    .unwrap_or_default()
+    tokio::task::spawn_blocking(move || get_installed_mods_sync(mods_folder_path))
+        .await
+        .unwrap_or_default()
 }
 
 #[tauri::command]
@@ -697,8 +692,7 @@ pub fn switch_mod_blacklist_profile(
     enabled: bool,
 ) -> Result<String, String> {
     let mods: Vec<(&String, &String)> = mod_names.iter().zip(mod_files.iter()).collect();
-    let result =
-        blacklist::switch_mod_blacklist_profile(&game_path, &profile_name, mods, enabled);
+    let result = blacklist::switch_mod_blacklist_profile(&game_path, &profile_name, mods, enabled);
     result
         .map(|_| "Success".to_string())
         .map_err(|e| format!("Failed to switch blacklist profile: {}", e))
@@ -771,10 +765,7 @@ pub fn rm_mod(mods_folder_path: String, mod_name: String) {
 }
 
 #[tauri::command]
-pub fn delete_mods(
-    game_path: String,
-    mod_names: Vec<String>,
-) -> Result<String, String> {
+pub fn delete_mods(game_path: String, mod_names: Vec<String>) -> Result<String, String> {
     let game_path = normalize_game_path(&game_path);
     let mods_folder_path = Path::new(&game_path)
         .join("Mods")
@@ -904,7 +895,7 @@ pub fn show_log_window() {
     {
         #[cfg(not(debug_assertions))]
         {
-            use winapi::um::winuser::{SW_SHOW, ShowWindow};
+            use winapi::um::winuser::{ShowWindow, SW_SHOW};
             unsafe {
                 ShowWindow(winapi::um::wincon::GetConsoleWindow(), SW_SHOW);
             }
@@ -918,7 +909,6 @@ pub fn cancel_download_mod(name: String) -> bool {
     eprintln!("cancel_download_mod called for {}", name);
     true
 }
-
 
 // ============================================================
 // Event-based commands (progress via Tauri events)
@@ -975,13 +965,14 @@ pub async fn download_mod(
 
     // Helper to emit progress
     let app_handle_clone = app_handle.clone();
-    let emit_progress: Arc<dyn Fn(&Vec<DownloadInfo>, &str) + Send + Sync> = Arc::new(move |tl: &Vec<DownloadInfo>, state: &str| {
-        let payload = DownloadProgressPayload {
-            subtasks: tl.clone(),
-            state: state.to_string(),
-        };
-        let _ = app_handle_clone.emit("download-mod-progress", payload);
-    });
+    let emit_progress: Arc<dyn Fn(&Vec<DownloadInfo>, &str) + Send + Sync> =
+        Arc::new(move |tl: &Vec<DownloadInfo>, state: &str| {
+            let payload = DownloadProgressPayload {
+                subtasks: tl.clone(),
+                state: state.to_string(),
+            };
+            let _ = app_handle_clone.emit("download-mod-progress", payload);
+        });
 
     fn spawn_download_task(
         task_index: usize,
@@ -1048,7 +1039,8 @@ pub async fn download_mod(
                             .filter_map(|(dep, min_ver)| {
                                 if installed_mods.iter().any(|m| {
                                     m.name == dep
-                                        && crate::commands::compare_version(&m.version, &min_ver) >= 0
+                                        && crate::commands::compare_version(&m.version, &min_ver)
+                                            >= 0
                                 }) {
                                     return None;
                                 }
@@ -1214,14 +1206,13 @@ pub async fn download_and_install_everest(
     let game_path = normalize_game_path(&game_path);
 
     std::thread::spawn(move || {
-        match everest::download_and_install_everest(
-            &game_path,
-            &url,
-            &mut |status, progress| {
-                let payload = EverestInstallProgress { status, progress: progress as f64 };
-                let _ = app_handle.emit("everest-install-progress", payload);
-            },
-        ) {
+        match everest::download_and_install_everest(&game_path, &url, &mut |status, progress| {
+            let payload = EverestInstallProgress {
+                status,
+                progress: progress as f64,
+            };
+            let _ = app_handle.emit("everest-install-progress", payload);
+        }) {
             Ok(()) => {
                 let payload = EverestInstallProgress {
                     status: "Success".to_string(),
@@ -1235,47 +1226,6 @@ pub async fn download_and_install_everest(
                     progress: 0.0,
                 };
                 let _ = app_handle.emit("everest-install-progress", payload);
-            }
-        }
-    });
-
-    Ok(())
-}
-
-#[tauri::command]
-pub async fn do_self_update(app: AppHandle, url: String) -> Result<(), String> {
-    let app_handle = app.clone();
-    let cancel_flag = Arc::new(AtomicBool::new(false));
-
-    std::thread::spawn(move || {
-        let tmp = std::env::temp_dir().join("cele-mod.exe");
-        match ureq::download_file_with_progress(
-            &url,
-            tmp.to_string_lossy().as_ref(),
-            &mut |progress| {
-                let payload = SelfUpdateProgress {
-                    state: "downloading".to_string(),
-                    data: progress.progress as f64,
-                };
-                let _ = app_handle.emit("self-update-progress", payload);
-            },
-            false,
-            &cancel_flag,
-        ) {
-            Ok(()) => {
-                let current_exe = std::env::current_exe().unwrap();
-                let current_exe = current_exe.to_string_lossy().to_string();
-                let mut cmd = std::process::Command::new(&tmp);
-                cmd.arg("/update").arg(current_exe);
-                cmd.spawn().unwrap();
-                std::process::exit(0);
-            }
-            Err(e) => {
-                let payload = SelfUpdateProgress {
-                    state: format!("failed: {}", e),
-                    data: 0.0,
-                };
-                let _ = app_handle.emit("self-update-progress", payload);
             }
         }
     });

@@ -58,7 +58,6 @@ function getParamNames(command: string): string[] {
     delete_mod_files: ['modsFolderPath', 'fileNames'],
     get_everest_version: ['gamePath'],
     download_and_install_everest: ['gamePath', 'url'],
-    do_self_update: ['url'],
     open_url: ['url'],
     verify_celeste_install: ['path'],
     normalize_game_path_cmd: ['path'],

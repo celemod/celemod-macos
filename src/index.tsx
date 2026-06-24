@@ -19,10 +19,6 @@ async function init() {
   const platform = await getPlatform()
   document.documentElement.setAttribute('platform', platform)
 
-  // Attach checkUpdate to window for inline scripts
-  const { checkUpdate } = await import('./components/SelfUpdate')
-  ;(window as any)._checkUpdate = checkUpdate
-
   // F5 reload
   window.addEventListener('keyup', (evt) => {
     if (evt.code === 'F5') {

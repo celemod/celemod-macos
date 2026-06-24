@@ -1,5 +1,5 @@
 import i18n from 'src/i18n'
-import { Fragment, createContext, useMemo, useEffect, useContext } from 'react'
+import { Fragment, createContext, useMemo, useContext } from 'react'
 import { MemoryRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { Icon } from './components/Icon'
 import { Toast } from '@heroui/react'
@@ -16,7 +16,6 @@ import { createDownloadContext } from './context/download'
 import { DownloadListMenu } from './components/DownloadList'
 import { useEverestCtx as createEverestContext } from './context/everest'
 import { Everest } from './routes/Everest'
-import { checkUpdate } from './components/SelfUpdate'
 import { createBlacklistContext } from './context/blacklist'
 import { RecommendMaps } from './routes/RecommendMaps'
 import { Modal } from '@heroui/react'
@@ -83,10 +82,6 @@ const AppLayout = () => {
   initMirror()
 
   const [gamePath] = useGamePath()
-
-  useEffect(() => {
-    checkUpdate().catch(console.error)
-  }, [])
 
   const currentLang = i18n.language
 

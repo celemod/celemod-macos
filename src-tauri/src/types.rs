@@ -58,14 +58,6 @@ pub struct FullModCheckProgress {
     pub issues: Vec<FullModCheckIssue>,
 }
 
-// --- Self-update progress ---
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct SelfUpdateProgress {
-    pub state: String,
-    pub data: f64,
-}
-
 // --- Everest install progress ---
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

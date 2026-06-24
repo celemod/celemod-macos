@@ -69,7 +69,6 @@ pub fn run() {
             commands::delete_mod_files,
             commands::get_everest_version,
             commands::download_and_install_everest,
-            commands::do_self_update,
             commands::open_url,
             commands::verify_celeste_install,
             commands::normalize_game_path_cmd,
