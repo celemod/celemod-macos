@@ -16,6 +16,7 @@ import { Everest } from './routes/Everest'
 import { createBlacklistContext } from './context/blacklist'
 import { RecommendMaps } from './routes/RecommendMaps'
 import { NavSidebar } from './components/nav-sidebar'
+import { AlertProvider } from './components/alert'
 
 // Map page names to route paths
 const PAGE_PATHS: Record<string, string> = {
@@ -63,6 +64,7 @@ const AppLayout = () => {
 
   return (
     <Fragment>
+      <AlertProvider />
       <Toast.Provider />
       {/* @ts-ignore */}
       <GlobalContext.Provider
