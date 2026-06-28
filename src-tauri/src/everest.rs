@@ -1,7 +1,7 @@
 use crate::{ureq, wegfan};
 
 use ::ureq::get;
-use anyhow::{Context, bail};
+use anyhow::{bail, Context};
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -9,7 +9,7 @@ use std::{
     io::{BufRead, BufReader, Write},
     path::{Path, PathBuf},
     process::{Command, Stdio},
-    sync::{Arc, atomic::AtomicBool},
+    sync::{atomic::AtomicBool, Arc},
 };
 
 #[derive(Serialize, Deserialize)]
@@ -55,7 +55,9 @@ lazy_static! {
 }
 
 fn load_mod_cache() -> Option<Vec<ModInfoCached>> {
-    let cache_dir = dirs::cache_dir().map(|d| d.join("celemod")).unwrap_or_else(|| std::env::temp_dir().join("celemod"));
+    let cache_dir = dirs::cache_dir()
+        .map(|d| d.join("celemod"))
+        .unwrap_or_else(|| std::env::temp_dir().join("celemod"));
     std::fs::create_dir_all(&cache_dir).ok()?;
     let cache_path = cache_dir.join("mod_cache.json");
     let data = std::fs::read_to_string(cache_path).ok()?;
@@ -63,7 +65,9 @@ fn load_mod_cache() -> Option<Vec<ModInfoCached>> {
 }
 
 fn save_mod_cache(mods: &[ModInfoCached]) {
-    if let Some(cache_dir) = dirs::cache_dir().or_else(|| Some(std::env::temp_dir().join("celemod"))) {
+    if let Some(cache_dir) =
+        dirs::cache_dir().or_else(|| Some(std::env::temp_dir().join("celemod")))
+    {
         let cache_dir = cache_dir.join("celemod");
         let _ = std::fs::create_dir_all(&cache_dir);
         let cache_path = cache_dir.join("mod_cache.json");
@@ -123,20 +127,18 @@ pub fn get_everest_version(game_path: &str) -> Option<i32> {
     let game_path = Path::new(game_path);
 
     check_file(game_path.join("Celeste.exe"))
-        .or_else(|| {
-            match std::fs::read(game_path.join("Celeste.exe")) {
-                Ok(data) => {
-                    if data
-                        .windows(MAGIC_STR_ONLY_ORIGIN_EXE.as_bytes().len())
-                        .any(|window| window == MAGIC_STR_ONLY_ORIGIN_EXE.as_bytes())
-                    {
-                        None
-                    } else {
-                        check_file(game_path.join("Celeste.dll"))
-                    }
+        .or_else(|| match std::fs::read(game_path.join("Celeste.exe")) {
+            Ok(data) => {
+                if data
+                    .windows(MAGIC_STR_ONLY_ORIGIN_EXE.as_bytes().len())
+                    .any(|window| window == MAGIC_STR_ONLY_ORIGIN_EXE.as_bytes())
+                {
+                    None
+                } else {
+                    check_file(game_path.join("Celeste.dll"))
                 }
-                Err(_) => check_file(game_path.join("Celeste.dll")),
             }
+            Err(_) => check_file(game_path.join("Celeste.dll")),
         })
         .or(None)
 }
@@ -148,7 +150,6 @@ fn run_command(
     let mut cmd = Command::new(&installer_path);
     cmd.stdout(Stdio::piped());
     cmd.stderr(Stdio::piped());
-    const CREATE_NO_WINDOW: u32 = 0x08000000;
     #[cfg(target_os = "windows")]
     use std::os::windows::process::CommandExt;
     #[cfg(target_os = "windows")]
