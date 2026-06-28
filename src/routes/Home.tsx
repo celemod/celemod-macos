@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react'
+import { useState } from 'react'
 import { GameSelector } from '../components/GameSelector'
 import { Icon } from '../components/Icon'
 import { callRemote, selectGamePath } from '../utils'
@@ -13,10 +13,10 @@ import {
 } from '../states'
 import { useEffect } from 'react'
 import { Checkbox, Select, ListBox, Heading, Card, Button } from '@heroui/react'
-import { createPopup, PopupContext } from '../components/Popup'
 import { useGlobalContext } from 'src/App'
 import { LanuchButton } from 'src/components/LaunchButton'
 import { useTranslation } from 'react-i18next'
+import { useAlert } from 'src/components/alert'
 
 export const Home = () => {
   const { t, i18n } = useTranslation()
@@ -82,9 +82,13 @@ export const Home = () => {
 
   const [alwaysOnMods] = useAlwaysOnMods()
 
+  const alert = useAlert()
   useEffect(() => {
     if (!currentProfile || !gamePath) return
-    ;(async () => {
+
+    effect()
+
+    async function effect() {
       const content = (await callRemote('get_current_blacklist_content', gamePath)) as string
       const disabledFiles = (content || '')
         .split('\n')
@@ -99,11 +103,11 @@ export const Home = () => {
         expectedDisabledFiles.some((file) => !disabledFiles.includes(file)) ||
         disabledFiles.some((file) => !expectedDisabledFiles.includes(file))
       ) {
-        createPopup(() => {
-          const { hide } = useContext(PopupContext)
-          return (
-            <div className="popup-content spacey">
-              <Heading level={5}>{t('同步黑名单 Mod 列表')}</Heading>
+        alert({
+          status: 'warning',
+          title: t('黑名单同步警告'),
+          message: (
+            <>
               <p>{t('当前的 blacklist.txt 与配置文件不同。您想要同步配置文件以匹配吗？')}</p>
               <p>
                 {`不同的 Mod: ${[
@@ -114,34 +118,18 @@ export const Home = () => {
                 ].join(', ')}`}
               </p>
               <p>{t('注意，该功能不支持通配符等')}</p>
-              <div className="space-x-2">
-                <Button
-                  variant="secondary"
-                  onClick={async () => {
-                    await callRemote(
-                      'sync_blacklist_profile_from_file',
-                      gamePath,
-                      currentProfileName,
-                    )
-                    const profilesData = (await callRemote(
-                      'get_blacklist_profiles',
-                      gamePath,
-                    )) as any[]
-                    setProfiles(profilesData)
-                    hide()
-                  }}
-                >
-                  {t('同步')}
-                </Button>
-                <Button variant="secondary" onClick={() => hide()}>
-                  {t('忽略')}
-                </Button>
-              </div>
-            </div>
-          )
+            </>
+          ),
+          cancelText: t('取消'),
+          okText: t('同步'),
+          onOk: async () => {
+            await callRemote('sync_blacklist_profile_from_file', gamePath, currentProfileName)
+            const profilesData = (await callRemote('get_blacklist_profiles', gamePath)) as any[]
+            setProfiles(profilesData)
+          },
         })
       }
-    })()
+    }
   }, [currentProfile, gamePath, alwaysOnMods, currentProfileName])
 
   const formatTime = (time: number) => {
