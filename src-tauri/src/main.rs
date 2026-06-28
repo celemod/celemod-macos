@@ -17,7 +17,10 @@ fn main() {
             if current_exe.contains(".app/Contents/") {
                 // We're running inside a .app bundle; the /update arg may point to a different location
                 // Just copy the new binary over the old one
-                eprintln!("[self-update] macOS: replacing {} with {}", new_exe, current_exe);
+                eprintln!(
+                    "[self-update] macOS: replacing {} with {}",
+                    new_exe, current_exe
+                );
             }
         }
 
@@ -27,5 +30,5 @@ fn main() {
         return;
     }
 
-    cele_mod_lib::run();
+    celemod_lib::run();
 }

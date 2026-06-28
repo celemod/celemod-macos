@@ -4,7 +4,7 @@ version = "0.1.8"
 edition = "2021"
 
 [lib]
-name = "cele_mod_lib"
+name = "celemod_lib"
 crate-type = ["lib", "cdylib", "staticlib"]
 
 [dependencies]
