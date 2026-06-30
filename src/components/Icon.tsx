@@ -22,6 +22,7 @@ import {
   Clock,
   Save,
   LoaderPinwheel,
+  Loader,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -49,6 +50,7 @@ const iconMap: Record<string, LucideIcon> = {
   clock: Clock,
   save: Save,
   loaderPinwheel: LoaderPinwheel,
+  loader: Loader,
 }
 
 export const Icon = ({
