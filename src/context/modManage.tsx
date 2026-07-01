@@ -84,7 +84,9 @@ export const createModManageContext = () => {
         try {
           const ver = (await callRemote('get_everest_version', gamePath)) as string
           if (ver && ver.length > 2) {
-            const loadingId = toast(t('正在加载 Mod 列表，请稍等'))
+            const loadingId = toast(t('正在加载 Mod 列表，请稍等'), {
+              isLoading: true,
+            })
             try {
               await ctx.reloadMods()
               toast.close(loadingId)
