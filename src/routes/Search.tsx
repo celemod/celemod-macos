@@ -6,7 +6,7 @@ import { Button } from '../components/Button'
 import { Icon } from '../components/Icon'
 import { useRef } from 'react'
 import { Content, searchSubmission } from '../api/wegfan'
-import { Select, ListBox, Input } from '@heroui/react'
+import { Select, ListBox, Input, Heading } from '@heroui/react'
 import { enforceEverest } from '../components/EnforceEverestPage'
 import { useTranslation } from 'react-i18next'
 
@@ -72,7 +72,8 @@ export default function Search() {
 
   return (
     <Fragment>
-      <div className="flex items-center space-x-2">
+      <Heading level={1}>{t('搜索')}</Heading>
+      <div className="flex items-center space-x-2 mt-2">
         <Input
           className={'grow'}
           value={search}
