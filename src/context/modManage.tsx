@@ -1,6 +1,6 @@
 import { callRemote } from '../utils'
 import { useInstalledMods, useGamePath, useStorage, initGamePath, initModComments } from '../states'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { toast } from '@heroui/react'
 import { useTranslation } from 'react-i18next'
 import { useAlert } from 'src/components/alert'
@@ -13,7 +13,6 @@ export const createModManageContext = () => {
   const { setInstalledMods } = useInstalledMods()
   const [gamePath] = useGamePath()
   const st = useStorage()
-  const [isLoading, setIsLoading] = useState(false)
 
   // Save game path to store when it changes
   useEffect(() => {
@@ -38,80 +37,77 @@ export const createModManageContext = () => {
       setInstalledMods(data)
       return data
     },
+    checkInvalidZipMods: async () => {
+      if (!gamePath) return
+      try {
+        const invalidFiles = (await callRemote(
+          'get_invalid_zip_mod_files_cmd',
+          gamePath + '/Mods',
+        )) as string[]
+        if (invalidFiles.length === 0) return
+
+        alert({
+          status: 'warning',
+          title: t('发现无效 Mod 压缩包'),
+          message: (
+            <>
+              <p>{t('以下文件不是有效的 zip，继续保留可能导致游戏崩溃：')}</p>
+              <p>{invalidFiles.join(', ')}</p>
+            </>
+          ),
+          cancelText: t('暂不处理'),
+          okText: t('删除这些文件'),
+          onOk: async () => {
+            try {
+              await callRemote('delete_mod_files', gamePath + '/Mods', invalidFiles)
+              await ctx.reloadMods()
+            } catch (e) {
+              console.error('Failed to delete files:', e)
+            }
+          },
+        })
+      } catch (e) {
+        console.error('Failed to check invalid zip mods:', e)
+      }
+    },
     gamePath,
     modsPath: gamePath + '/Mods',
-    isLoading,
   }
 
-  async function checkInvalidZipMods() {
-    if (!gamePath) return
+  // WHY THE FUCK useEffect doesn't trigger here
+  if (lastGamePath !== gamePath) {
+    lastGamePath = gamePath
 
-    try {
-      const invalidFiles = (await callRemote(
-        'get_invalid_zip_mod_files_cmd',
-        gamePath + '/Mods',
-      )) as string[]
-      if (invalidFiles.length === 0) return
-
-      alert({
-        status: 'warning',
-        title: t('发现无效 Mod 压缩包'),
-        message: (
-          <>
-            <p>{t('以下文件不是有效的 zip，继续保留可能导致游戏崩溃：')}</p>
-            <p>{invalidFiles.join(', ')}</p>
-          </>
-        ),
-        cancelText: t('暂不处理'),
-        okText: t('删除这些文件'),
-        onOk: async () => {
-          try {
-            await callRemote('delete_mod_files', gamePath + '/Mods', invalidFiles)
-            await ctx.reloadMods()
-          } catch (e) {
-            console.error('Failed to delete files:', e)
-          }
-        },
-      })
-    } catch (e) {
-      console.error('Failed to check invalid zip mods:', e)
-    }
-  }
-
-  useEffect(() => {
-    if (lastGamePath !== gamePath) {
-      lastGamePath = gamePath
-
-      effect()
-
-      async function effect() {
-        if (gamePath) {
-          try {
-            const ver = (await callRemote('get_everest_version', gamePath)) as string
-            if (ver && ver.length > 2) {
-              setIsLoading(true)
-              try {
-                await ctx.reloadMods()
-                await checkInvalidZipMods()
-              } catch {
-                toast.danger(t('加载 Mod 列表失败'), {
-                  description:
-                    t('请检查游戏路径是否正确，或网络连接是否正常') + ', ' + t('部分功能将不可用'),
+    if (gamePath) {
+      ;(async () => {
+        try {
+          const ver = (await callRemote('get_everest_version', gamePath)) as string
+          if (ver && ver.length > 2) {
+            const loadingId = toast(t('正在加载 Mod 列表，请稍等'))
+            try {
+              await ctx.reloadMods()
+              toast.close(loadingId)
+              ctx.checkInvalidZipMods()
+              const isUsingCache = await callRemote('is_using_cache')
+              if (isUsingCache) {
+                toast.warning(t('离线模式'), {
+                  description: t('正在使用缓存的 Mod 数据，可能已过期或不完整'),
                 })
-              } finally {
-                setIsLoading(false)
               }
+            } catch {
+              toast.close(loadingId)
+              toast.danger(t('加载 Mod 列表失败'), {
+                description:
+                  t('请检查游戏路径是否正确，或网络连接是否正常') + ', ' + t('部分功能将不可用'),
+              })
             }
-          } catch (e) {
-            console.error('Failed to check everest version:', e)
-            toast.danger('Failed to check everest version', {
-              description: e instanceof Error ? e.message : String(e),
-            })
           }
+        } catch (e) {
+          console.error('Failed to check everest version:', e)
         }
-      }
+      })()
     }
-  }, [gamePath, ctx])
+  }
 
   return ctx
 }

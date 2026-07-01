@@ -866,6 +866,11 @@ pub fn sync_blacklist_profile_from_file(
 }
 
 #[tauri::command]
+pub fn is_using_cache() -> bool {
+    everest::is_using_cache()
+}
+
+#[tauri::command]
 pub fn set_mod_options_order(
     game_path: String,
     profile_name: String,

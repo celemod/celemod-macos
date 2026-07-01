@@ -75,6 +75,7 @@ pub fn run() {
             commands::show_log_window,
             commands::get_current_blacklist_content,
             commands::sync_blacklist_profile_from_file,
+            commands::is_using_cache,
             commands::cancel_download_mod,
             commands::download_mod,
             commands::set_mod_options_order,
