@@ -65,7 +65,7 @@ const AppLayout = () => {
   return (
     <Fragment>
       <AlertProvider />
-      <Toast.Provider />
+      <Toast.Provider placement="top" />
       {/* @ts-ignore */}
       <GlobalContext.Provider
         value={{
