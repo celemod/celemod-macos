@@ -37,41 +37,42 @@ export const createModManageContext = () => {
       setInstalledMods(data)
       return data
     },
-    checkInvalidZipMods: async () => {
-      if (!gamePath) return
-      try {
-        const invalidFiles = (await callRemote(
-          'get_invalid_zip_mod_files_cmd',
-          gamePath + '/Mods',
-        )) as string[]
-        if (invalidFiles.length === 0) return
-
-        alert({
-          status: 'warning',
-          title: t('发现无效 Mod 压缩包'),
-          message: (
-            <>
-              <p>{t('以下文件不是有效的 zip，继续保留可能导致游戏崩溃：')}</p>
-              <p>{invalidFiles.join(', ')}</p>
-            </>
-          ),
-          cancelText: t('暂不处理'),
-          okText: t('删除这些文件'),
-          onOk: async () => {
-            try {
-              await callRemote('delete_mod_files', gamePath + '/Mods', invalidFiles)
-              await ctx.reloadMods()
-            } catch (e) {
-              console.error('Failed to delete files:', e)
-            }
-          },
-        })
-      } catch (e) {
-        console.error('Failed to check invalid zip mods:', e)
-      }
-    },
     gamePath,
     modsPath: gamePath + '/Mods',
+  }
+
+  async function checkInvalidZipMods() {
+    if (!gamePath) return
+    try {
+      const invalidFiles = (await callRemote(
+        'get_invalid_zip_mod_files_cmd',
+        gamePath + '/Mods',
+      )) as string[]
+      if (invalidFiles.length === 0) return
+
+      alert({
+        status: 'warning',
+        title: t('发现无效 Mod 压缩包'),
+        message: (
+          <>
+            <p>{t('以下文件不是有效的 zip，继续保留可能导致游戏崩溃：')}</p>
+            <p>{invalidFiles.join(', ')}</p>
+          </>
+        ),
+        cancelText: t('暂不处理'),
+        okText: t('删除这些文件'),
+        onOk: async () => {
+          try {
+            await callRemote('delete_mod_files', gamePath + '/Mods', invalidFiles)
+            await ctx.reloadMods()
+          } catch (e) {
+            console.error('Failed to delete files:', e)
+          }
+        },
+      })
+    } catch (e) {
+      console.error('Failed to check invalid zip mods:', e)
+    }
   }
 
   // WHY THE FUCK useEffect doesn't trigger here
@@ -87,7 +88,7 @@ export const createModManageContext = () => {
             try {
               await ctx.reloadMods()
               toast.close(loadingId)
-              ctx.checkInvalidZipMods()
+              checkInvalidZipMods()
               const isUsingCache = await callRemote('is_using_cache')
               if (isUsingCache) {
                 toast.warning(t('离线模式'), {
