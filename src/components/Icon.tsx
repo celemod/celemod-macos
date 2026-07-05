@@ -11,7 +11,6 @@ import {
   Trash2,
   ChevronDown,
   ChevronRight,
-  Circle,
   Minus,
   Maximize,
   X,
@@ -24,6 +23,8 @@ import {
   LoaderPinwheel,
   Loader,
   type LucideIcon,
+  Dot,
+  Asterisk,
 } from 'lucide-react'
 
 const iconMap: Record<string, LucideIcon> = {
@@ -39,7 +40,7 @@ const iconMap: Record<string, LucideIcon> = {
   delete: Trash2,
   'i-down': ChevronDown,
   'i-right': ChevronRight,
-  'i-asterisk': Circle,
+  'i-asterisk': Asterisk,
   minus: Minus,
   landscape: Maximize,
   cancel: X,
@@ -51,6 +52,7 @@ const iconMap: Record<string, LucideIcon> = {
   save: Save,
   loaderPinwheel: LoaderPinwheel,
   loader: Loader,
+  dot: Dot,
 }
 
 export const Icon = ({
