@@ -19,6 +19,7 @@ import { createPopup, PopupContext } from '../components/Popup'
 import { ProgressIndicator } from '../components/Progress'
 import { Card, Checkbox, Heading, Input } from '@heroui/react'
 import { useTranslation } from 'react-i18next'
+import { ModListItem } from 'src/components/mod-list-item'
 
 type DepState = 'resolved' | 'missing' | 'not-enabled' | 'mismatched-version'
 
@@ -69,7 +70,7 @@ type ModDepInfo = ModInfoProbablyMissing & {
   optional: boolean
 }
 
-const modListContext = createContext<{
+export const modListContext = createContext<{
   switchMod: (id: string, enabled: boolean, recursive?: boolean) => void
   switchProfile: (name: string) => void
   removeProfile: (name: string) => void
@@ -93,344 +94,7 @@ const modListContext = createContext<{
   setModComment: (name: string, comment: string) => void
 } | null>({} as any)
 
-const ModBadge = ({
-  children,
-  bg,
-  color,
-  onClick,
-  title,
-  onContextMenu,
-}: {
-  children: any
-  color: string
-  bg: string
-  onClick?: () => void
-  onContextMenu?: (e: MouseEvent) => void
-  title?: string
-}) => {
-  return (
-    <span
-      className="ma-badge"
-      onClick={onClick}
-      // @ts-ignore
-      onContextMenu={onContextMenu}
-      style={{
-        background: bg,
-        color: color,
-        cursor: onClick ? 'pointer' : 'default',
-      }}
-      title={title}
-    >
-      {children}
-    </span>
-  )
-}
-
-const ModMissing = ({ name, version, optional }: MissingModDepInfo) => {
-  const { t } = useTranslation()
-  const { download } = useGlobalContext()
-  const ctx = useContext(modListContext)
-  const [state, setState] = useState(t('缺失'))
-  const [gbFileID, setGBFileID] = useState<string | null>(null)
-  useEffect(() => {
-    handler()
-
-    async function handler() {
-      const data = (await callRemote('get_mod_update', name)) as any[]
-      if (data) {
-        const [gbFileId] = data
-        setGBFileID(gbFileId)
-        if (optional) setState(t('点击下载'))
-        else setState(t('缺失·点击下载'))
-      }
-    }
-  }, [name])
-
-  return (
-    <div className="m-mod missing flex items-center gap-x-1">
-      <Icon name="warn" />
-      <ModBadge
-        bg={optional ? '#3ca3f4' : '#ef4647'}
-        color="white"
-        onClick={
-          gbFileID !== null
-            ? async () => {
-                setState(t('下载中'))
-                download.downloadMod(name, gbFileID, {
-                  autoDisableNewMods: ctx?.autoDisableNewMods || false,
-                  onProgress: (task, progress) => {
-                    setState(`${progress}% (${task.subtasks.length})`)
-                  },
-                  onFinished: () => {
-                    setState(t('下载完成'))
-                    ctx?.reloadMods()
-                  },
-                  onFailed: () => {
-                    setState(t('下载失败'))
-                  },
-                })
-              }
-            : undefined
-        }
-      >
-        {state}
-      </ModBadge>
-      {optional && (
-        <ModBadge bg="#ff9800" color="white">
-          {t('可选依赖')}
-        </ModBadge>
-      )}
-
-      <span>
-        {name} <span className="modVersion">{version}</span>{' '}
-      </span>
-    </div>
-  )
-}
-
 const excludeList = ['Everest', 'Celeste', 'EverestCore']
-
-const ModLocal = ({
-  name,
-  id,
-  enabled,
-  dependencies,
-  resolveDependencies,
-  dependedBy,
-  version,
-  optional = false,
-  file,
-  size,
-  duplicateCount,
-  duplicateFiles,
-  renderPath = [],
-}: ModInfo & { optional?: boolean; renderPath?: string[] }) => {
-  const { t } = useTranslation()
-  const { download } = useGlobalContext()
-  const [expanded, setExpanded] = useState(false)
-  const [hovered, setHovered] = useState(false)
-
-  const ctx = useContext(modListContext)
-  const hasCycle = renderPath.includes(name)
-
-  const hasDeps = useMemo(
-    () => dependencies.some((v) => !excludeList.includes(v.name)),
-    [dependencies],
-  )
-
-  const dependedByFiltered = useMemo(() => dependedBy.filter((v) => v.enabled), [dependedBy])
-
-  const depState = useMemo(resolveDependencies, [dependencies, enabled, resolveDependencies])
-
-  const [updateState, setUpdateState] = useState<[string, string] | null>(null)
-  const [updateString, setUpdateString] = useState('')
-  useEffect(() => {
-    const update = ctx?.hasUpdateMods.find((v) => v.name === name)
-    if (update) {
-      setUpdateState([update.gb_file, update.version])
-      setUpdateString(
-        t('点击更新 · {newversion}', {
-          newversion: update.version,
-        }),
-      )
-    } else {
-      setUpdateState(null)
-    }
-  }, [name, ctx.hasUpdateMods])
-
-  const isAlwaysOn = ctx?.alwaysOnMods.includes(name)
-
-  const [editingComment, setEditingComment] = useState(false)
-  const refCommentInput = useRef<HTMLInputElement>(null)
-  useEffect(() => {
-    if (editingComment) {
-      refCommentInput.current?.focus()
-    }
-  }, [editingComment])
-
-  return (
-    <div>
-      <div
-        className={`m-mod flex items-center gap-x-1 ${enabled && 'enabled'}`}
-        key={id}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-      >
-        <span
-          className={`expandBtn  ${expanded && 'expanded'} ${hasDeps && 'clickable'}`}
-          onClick={() => setExpanded(!expanded)}
-        >
-          {hasDeps && (!optional || ctx?.fullTree) ? (
-            expanded ? (
-              <Icon name="i-down" />
-            ) : (
-              <Icon name="i-right" />
-            )
-          ) : (
-            <Icon name="i-asterisk" />
-          )}
-        </span>
-        <ModBadge
-          bg={isAlwaysOn ? '#087EBF' : enabled ? '#4caf50' : '#2c313c'}
-          color="white"
-          onClick={() => {
-            ctx?.switchMod(name, !enabled)
-          }}
-          onContextMenu={(e) => {
-            e.preventDefault()
-            ctx?.switchAlwaysOn(name, !isAlwaysOn)
-          }}
-        >
-          {isAlwaysOn ? t('始终开启') : enabled ? t('已启用') : t('已禁用')}
-        </ModBadge>
-
-        {enabled &&
-          (depState.status === 'missing' ? (
-            <ModBadge bg="#ef4647" color="white" title={depState.message}>
-              {t('依赖·缺失')}
-            </ModBadge>
-          ) : depState.status === 'not-enabled' ? (
-            <ModBadge bg="#ff9800" color="white" title={depState.message}>
-              {t('依赖·未启用')}
-            </ModBadge>
-          ) : depState.status === 'mismatched-version' ? (
-            <ModBadge bg="#ff9800" color="white" title={depState.message}>
-              {t('依赖·版本不匹配')}
-            </ModBadge>
-          ) : null)}
-
-        {hasCycle && (
-          <ModBadge bg="#9c27b0" color="white">
-            {t('循环依赖')}
-          </ModBadge>
-        )}
-
-        {optional && (
-          <ModBadge bg="#ff9800" color="white">
-            {t('可选依赖')}
-          </ModBadge>
-        )}
-
-        {dependedByFiltered.length > 0 && (
-          <ModBadge
-            bg="#2196f3"
-            color="white"
-            title={t('启用的，依赖此 Mod 的 Mod: {slot0}', {
-              slot0: dependedByFiltered.map((v) => v.name).join(', '),
-            })}
-          >
-            {dependedByFiltered.length}
-          </ModBadge>
-        )}
-
-        {duplicateCount > 1 && (
-          <ModBadge
-            bg="#DB3D73"
-            color="white"
-            title={duplicateFiles.map((v) => v.split('/').pop()).join(' | ')}
-          >
-            {t('重复 Mod ·')}
-
-            {duplicateCount}
-            {t('次')}
-          </ModBadge>
-        )}
-
-        {ctx?.showUpdate && updateState && (
-          <ModBadge
-            bg="#ff9800"
-            color="white"
-            onClick={() => {
-              download.downloadMod(file.slice(0, -'.zip'.length), updateState[0], {
-                onProgress: (task, progress) => {
-                  setUpdateString(`${progress}% (${task.subtasks.length})`)
-                },
-                onFinished: () => {
-                  setUpdateString(t('下载完成'))
-                  ctx?.reloadMods()
-                },
-                onFailed: (task) => {
-                  console.log(task)
-                  setUpdateString(t('下载失败'))
-                },
-                force: true,
-              })
-            }}
-          >
-            {updateString}
-          </ModBadge>
-        )}
-
-        <span
-          className="modName"
-          onClick={() => setEditingComment(true)}
-          onContextMenu={(e) => {
-            e.preventDefault()
-            callRemote('open_url', ctx?.modFolder || '')
-          }}
-        >
-          {name}
-        </span>
-        {!editingComment && ctx?.modComments[name] && (
-          <span
-            className="modComment"
-            onClick={() => {
-              setEditingComment(true)
-            }}
-          >
-            {ctx?.modComments[name]}
-          </span>
-        )}
-        {editingComment && (
-          <input
-            type="text"
-            value={ctx?.modComments[name] ?? ''}
-            ref={refCommentInput}
-            className="modCommentInput"
-            onInput={(e) => ctx?.setModComment(name, (e.target as any).value)}
-            onKeyUp={(e) => {
-              if (e.keyCode === 257 || e.keyCode === 256) {
-                // enter or esc
-                setEditingComment(false)
-              }
-            }}
-            onBlur={() => setEditingComment(false)}
-          />
-        )}
-
-        <span className="modVersion">{version}</span>
-        {ctx?.showDetailed && (
-          <span className="modDetails">
-            [{formatSize(size)} · {file}]
-          </span>
-        )}
-        {hovered && (
-          <span className="delete-btn" onClick={() => ctx?.deleteMod(name)} title={t('删除 Mod')}>
-            <Icon name="delete" />
-          </span>
-        )}
-      </div>
-
-      {(!optional || ctx?.fullTree) && expanded && !hasCycle && (
-        <div className={`childTree pl-4 ${expanded && 'expanded'}`}>
-          {dependencies.map((v) => (
-            <Mod key={v.id + '-' + v.name} {...v} renderPath={[...renderPath, name]} />
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-const Mod = (props: ModDepInfo & { renderPath?: string[] }) => {
-  if (excludeList.includes(props.name)) {
-    return null
-  }
-  if ('_missing' in props) {
-    return <ModMissing {...props} />
-  }
-  return <ModLocal {...props} />
-}
 
 const Profile = ({
   name,
@@ -469,12 +133,6 @@ const Profile = ({
 }
 
 const alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789- _'
-
-const formatSize = (size: number) => {
-  const i = size === 0 ? 0 : Math.floor(Math.log(size) / Math.log(1024))
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
-  return `${(size / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`
-}
 
 let lastApplyReq = -1
 
@@ -1477,12 +1135,10 @@ export default function Manage() {
               </Button>
             )}
           </div>
-          <div className="list" ref={modsTreeRef}>
+          <div className="mt-4 space-y-1" ref={modsTreeRef}>
             {installedModsTree.map((v) => (
-              <Mod key={v.id + '-' + v.name} {...(v as any)} />
+              <ModListItem key={v.id + '-' + v.name} {...(v as any)} />
             ))}
-
-            <div className="padding"></div>
           </div>
         </div>
 
