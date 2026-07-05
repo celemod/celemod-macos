@@ -37,7 +37,7 @@ xattr -rd com.apple.quarantine /Applications/CeleMod.app
 
 <img width="864" height="705" alt="Image" src="https://github.com/user-attachments/assets/b6caa99d-56a1-41ef-96e9-3a92634bc43b" />
 
-<img width="864" height="705" alt="Image" src="https://github.com/user-attachments/assets/3a1a8a63-ffc3-4fcd-bce0-4e68f1e5006b" />
+<img width="864" height="705" alt="Image" src="https://github.com/user-attachments/assets/ee1ac187-e1eb-4c94-8a32-17c677abde34" />
 
 <img width="864" height="705" alt="Image" src="https://github.com/user-attachments/assets/102c679c-b475-42db-8b00-626510b5f763" />
 
