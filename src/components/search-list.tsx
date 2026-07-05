@@ -21,7 +21,7 @@ const processLargeNum = (num: number) => {
   return (num / 1000000000).toFixed(1) + 'b'
 }
 
-export interface ModDetailInfo {
+interface ModDetailInfo {
   description: string
   authors?: string[]
   images?: string[]
@@ -33,14 +33,14 @@ export interface ModDetailInfo {
   externalUrl?: string
 }
 
-export interface FileToDownload {
+interface FileToDownload {
   name: string
   url: string
   id: string
   size: string
 }
 
-export interface ModInfo {
+interface ModInfo {
   name: string
   downloadUrl: () => Promise<string | FileToDownload[]>
   previewUrl: string
@@ -50,7 +50,7 @@ export interface ModInfo {
   detail?: () => Promise<ModDetailInfo>
 }
 
-export const Mod = (props: {
+export const SearchModItem = (props: {
   mod: ModInfo
   onClick?: any
   expanded?: boolean
@@ -322,7 +322,7 @@ function HasInstalledMods({ installedModIDs, loading, props }) {
           }
 
           return (
-            <Mod
+            <SearchModItem
               key={mod.name}
               // @ts-ignore
               mod={mod}
@@ -366,7 +366,7 @@ function HasInstalledMods({ installedModIDs, loading, props }) {
   )
 }
 
-export const ModList = (props: {
+export const SearchList = (props: {
   mods: Content[]
   modFolder: string
   loading?: boolean

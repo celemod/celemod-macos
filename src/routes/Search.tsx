@@ -1,6 +1,6 @@
 import { Fragment } from 'react'
 import { useState, useEffect } from 'react'
-import { ModList } from '../components/ModList'
+import { SearchList } from '../components/search-list'
 import { currentMirror, initSearchSort, useGamePath, useSearchSort } from '../states'
 import { Button } from '../components/Button'
 import { Icon } from '../components/Icon'
@@ -188,7 +188,7 @@ export default function Search() {
       <div className="mt-6">
         {mods.length > 0 ? (
           mods[0] ? (
-            <ModList
+            <SearchList
               mods={mods}
               loading={loading}
               modFolder={selectedPath + '/Mods'}

@@ -1,5 +1,5 @@
 import { useGamePath } from '../states'
-import { Mod } from '../components/ModList'
+import { SearchModItem } from '../components/search-list'
 import { Button } from '../components/Button'
 import { useState, useEffect } from 'react'
 import { callRemote } from '../utils'
@@ -29,7 +29,7 @@ export default function Multiplayer() {
       </h1>
       <p>{t('为了在蔚蓝群服进行联机，你需要安装以下 Mod')}</p>
 
-      <Mod
+      <SearchModItem
         // @ts-ignore
         mod={{
           name: 'MiaoNet+',
