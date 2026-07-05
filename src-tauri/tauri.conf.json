@@ -21,7 +21,7 @@
   "app": {
     "windows": [
       {
-        "title": "",
+        "title": "CeleMod",
         "width": 800,
         "height": 640,
         "minWidth": 800,
@@ -29,7 +29,8 @@
         "resizable": true,
         "center": true,
         "decorations": true,
-        "titleBarStyle": "Overlay"
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true
       }
     ],
     "security": {
