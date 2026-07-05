@@ -3,13 +3,11 @@ import { Icon } from '../components/Icon'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useGamePath } from 'src/states'
 import { DownloadListPopover } from './DownloadList'
-import { useGlobalContext } from 'src/App'
 
 export function NavSidebar() {
   const { t, i18n } = useTranslation()
   const location = useLocation()
   const [gamePath] = useGamePath()
-  const { modManage } = useGlobalContext()
 
   const currentLang = i18n.language
 
@@ -25,7 +23,7 @@ export function NavSidebar() {
       {gamePath && (
         <>
           <SidebarButton
-            icon="chart-area"
+            icon="mountain-snow"
             name="Everest"
             title="Everest"
             path="/everest"
@@ -44,7 +42,6 @@ export function NavSidebar() {
             title={t('管理')}
             path="/manage"
             currentPath={location.pathname}
-            isLoading={modManage.isLoading}
           />
           {currentLang === 'zh-CN' && (
             <SidebarButton

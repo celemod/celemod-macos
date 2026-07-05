@@ -165,7 +165,7 @@ export default function Everest() {
 
   return (
     <div className="everest">
-      <img src="/everest.png" width={300} />
+      <img src="/everest.png" className="invert dark:invert-0 max-w-64" />
 
       <div className="line">
         {currentEverestVersion.length > 0 ? (

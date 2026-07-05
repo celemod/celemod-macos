@@ -20,11 +20,11 @@ import {
   Grid3x3,
   Clock,
   Save,
-  LoaderPinwheel,
   Loader,
   type LucideIcon,
   Dot,
   Asterisk,
+  MountainSnow,
 } from 'lucide-react'
 
 const iconMap: Record<string, LucideIcon> = {
@@ -50,9 +50,9 @@ const iconMap: Record<string, LucideIcon> = {
   grid: Grid3x3,
   clock: Clock,
   save: Save,
-  loaderPinwheel: LoaderPinwheel,
   loader: Loader,
   dot: Dot,
+  'mountain-snow': MountainSnow,
 }
 
 export const Icon = ({
