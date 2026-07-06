@@ -74,11 +74,9 @@ export const modListContext = createContext<{
   switchMod: (id: string, enabled: boolean, recursive?: boolean) => void
   switchProfile: (name: string) => void
   removeProfile: (name: string) => void
-  deleteMod: (name: string) => void
   modFolder: string
   gamePath: string
   currentProfileName: string
-  reloadMods: () => void
   fullTree: boolean
   showUpdate: boolean
   showDetailed: boolean
@@ -244,7 +242,7 @@ export default function Manage() {
     setCurrentProfile,
   } = useCurrentBlacklistProfile()
 
-  const { installedMods, setInstalledMods } = useInstalledMods()
+  const { installedMods, reloadMods } = useInstalledMods()
 
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
@@ -676,125 +674,10 @@ export default function Manage() {
         setProfilesCallback((profiles) => profiles.concat({ name, mods: [] }))
         setCurrentProfileName(name)
       },
-      deleteMod: (name: string) => {
-        const modToDelete = installedModMap.get(name)
-        if (!modToDelete) return
-
-        // Find mods that depend on this mod
-        const dependentMods = modToDelete.dependedBy
-
-        // Find orphaned mods (mods that will have no references after deletion)
-        const orphanedMods: ModInfo[] = []
-        const visited = new Set<string>()
-
-        const checkOrphans = (mod: ModInfo) => {
-          if (visited.has(mod.name)) return
-          visited.add(mod.name)
-
-          for (const dep of mod.dependencies) {
-            if ('_missing' in dep) continue
-            const depInfo = installedModMap.get(dep.name)
-            if (!depInfo) continue
-
-            // Check if this dependency will be orphaned after deletion
-            const remainingDependents = depInfo.dependedBy.filter(
-              (m) => m.name !== name && !orphanedMods.includes(m),
-            )
-
-            if (remainingDependents.length === 0 && !orphanedMods.includes(depInfo)) {
-              orphanedMods.push(depInfo)
-              checkOrphans(depInfo)
-            }
-          }
-        }
-        checkOrphans(modToDelete)
-
-        createPopup(() => {
-          const { hide } = useContext(PopupContext)
-          const [selectedOrphans, setSelectedOrphans] = useState<string[]>(
-            orphanedMods.map((m) => m.name),
-          )
-
-          const handleDelete = () => {
-            const modsToDelete = [name, ...selectedOrphans]
-            callRemote('delete_mods', gamePath, modsToDelete).then(() => {
-              manageCtx.reloadMods()
-              hide()
-            })
-          }
-
-          return (
-            <div className="delete-mod-popup">
-              <div className="title">{t('删除 Mod 确认')}</div>
-
-              {dependentMods.length > 0 && (
-                <div className="warning-section">
-                  <div className="warning-title">{t('⚠️ 警告：以下 Mod 依赖此 Mod')}</div>
-                  <div className="dependent-mods">
-                    {dependentMods.map((mod) => (
-                      <div key={mod.id + '-' + mod.name} className="dependent-mod">
-                        {mod.name} {mod.version} {mod.enabled ? '' : t('(已禁用)')}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="delete-target">
-                {t('将要删除：')}{' '}
-                <strong>
-                  {name} {modToDelete.version}
-                </strong>
-              </div>
-
-              {orphanedMods.length > 0 && (
-                <div className="orphan-section">
-                  <div className="orphan-title">
-                    {t('以下 Mod 将不再被任何 Mod 引用，是否一并删除？')}
-                  </div>
-                  <div className="orphan-list">
-                    {orphanedMods.map((mod) => (
-                      <label key={mod.id + '-' + mod.name} className="orphan-item">
-                        <input
-                          type="checkbox"
-                          checked={selectedOrphans.includes(mod.name)}
-                          onChange={(e) => {
-                            const target = e.target as HTMLInputElement
-                            if (target.checked) {
-                              setSelectedOrphans([...selectedOrphans, mod.name])
-                            } else {
-                              setSelectedOrphans(selectedOrphans.filter((n) => n !== mod.name))
-                            }
-                          }}
-                        />
-                        <span>
-                          {mod.name} {mod.version}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="buttons">
-                <Button onClick={hide}>{t('取消')}</Button>
-                <Button className="delete-confirm" onClick={handleDelete}>
-                  {t('确认删除')}
-                </Button>
-              </div>
-            </div>
-          )
-        })
-      },
       gamePath,
       modFolder: modPath,
       currentProfile,
       currentProfileName,
-      reloadMods() {
-        callRemote('get_installed_mods', modPath).then((data: any[]) => {
-          setInstalledMods(data)
-        })
-      },
       fullTree,
       showUpdate,
       showDetailed,
@@ -854,7 +737,7 @@ export default function Manage() {
             progress.issues.map((issue) => issue.file),
             () => {
               setDeleteState('done')
-              manageCtx.reloadMods()
+              reloadMods()
             },
           )
         }
@@ -1073,7 +956,7 @@ export default function Manage() {
                         updateUnfinishedSet.delete(mod.name)
                         if (updateUnfinishedSet.size === 0) {
                           setHasUpdateBtnState(t('更新完成'))
-                          manageCtx.reloadMods()
+                          reloadMods()
                         }
                       },
                       onFailed: () => {
@@ -1102,7 +985,7 @@ export default function Manage() {
                         remaining.delete(dep.name)
                         if (remaining.size === 0) {
                           setFixDepsState('idle')
-                          manageCtx.reloadMods()
+                          reloadMods()
                         }
                         return
                       }
@@ -1113,7 +996,7 @@ export default function Manage() {
                           remaining.delete(dep.name)
                           if (remaining.size === 0) {
                             setFixDepsState('idle')
-                            manageCtx.reloadMods()
+                            reloadMods()
                           }
                         },
                         onFailed: () => {
@@ -1137,7 +1020,11 @@ export default function Manage() {
           </div>
           <div className="mt-4 space-y-1" ref={modsTreeRef}>
             {installedModsTree.map((v) => (
-              <ModListItem key={v.id + '-' + v.name} {...(v as any)} />
+              <ModListItem
+                installedModMap={installedModMap}
+                key={v.id + '-' + v.name}
+                {...(v as any)}
+              />
             ))}
           </div>
         </div>

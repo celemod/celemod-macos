@@ -4,8 +4,10 @@ import { useTranslation } from 'react-i18next'
 import { useGlobalContext } from 'src/App'
 import { callRemote } from 'src/utils'
 import { Icon } from './Icon'
-import { BackendDep } from 'src/states'
+import { BackendDep, useInstalledMods } from 'src/states'
 import { modListContext } from 'src/routes/Manage'
+import { AlertDialog } from './alert-dialog'
+import { useDeleteMods } from 'src/hooks/use-delete-mods'
 
 type DepState = 'resolved' | 'missing' | 'not-enabled' | 'mismatched-version'
 
@@ -51,7 +53,9 @@ const formatSize = (size: number) => {
 
 const excludeList = ['Everest', 'Celeste', 'EverestCore']
 
-export function ModListItem(props: ModDepInfo & { renderPath?: string[] }) {
+export function ModListItem(
+  props: ModDepInfo & { renderPath?: string[]; installedModMap?: Map<string, ModInfo> },
+) {
   if (excludeList.includes(props.name)) {
     return null
   }
@@ -63,6 +67,7 @@ export function ModListItem(props: ModDepInfo & { renderPath?: string[] }) {
 
 function ModMissing({ name, version, optional }: MissingModDepInfo) {
   const { t } = useTranslation()
+  const { reloadMods } = useInstalledMods()
   const { download } = useGlobalContext()
   const ctx = useContext(modListContext)
   const [state, setState] = useState(t('缺失'))
@@ -101,7 +106,7 @@ function ModMissing({ name, version, optional }: MissingModDepInfo) {
             },
             onFinished: () => {
               setState(t('下载完成'))
-              ctx?.reloadMods()
+              reloadMods()
             },
             onFailed: () => {
               setState(t('下载失败'))
@@ -139,8 +144,14 @@ function ModLocal({
   duplicateCount,
   duplicateFiles,
   renderPath = [],
-}: ModInfo & { optional?: boolean; renderPath?: string[] }) {
+  installedModMap,
+}: ModInfo & {
+  optional?: boolean
+  renderPath?: string[]
+  installedModMap?: Map<string, ModInfo>
+}) {
   const { t } = useTranslation()
+  const { reloadMods } = useInstalledMods()
   const { download } = useGlobalContext()
   const [expanded, setExpanded] = useState(false)
   const [hovered, setHovered] = useState(false)
@@ -286,7 +297,7 @@ function ModLocal({
                 },
                 onFinished: () => {
                   setUpdateString(t('下载完成'))
-                  ctx?.reloadMods()
+                  reloadMods()
                 },
                 onFailed: (task) => {
                   console.log(task)
@@ -342,17 +353,18 @@ function ModLocal({
             [{formatSize(size)} · {file}]
           </span>
         )}
-        {hovered && (
-          <span className="text-danger" onClick={() => ctx?.deleteMod(name)} title={t('删除 Mod')}>
-            <Icon name="delete" />
-          </span>
-        )}
+        {hovered && <ModDeleteButton name={name} installedModMap={installedModMap} />}
       </div>
 
       {(!optional || ctx?.fullTree) && expanded && !hasCycle && (
         <div className={`space-y-0.5 mt-1 pl-6`}>
           {dependencies.map((v) => (
-            <ModListItem key={v.id + '-' + v.name} {...v} renderPath={[...renderPath, name]} />
+            <ModListItem
+              key={v.id + '-' + v.name}
+              {...v}
+              renderPath={[...renderPath, name]}
+              installedModMap={installedModMap}
+            />
           ))}
         </div>
       )}
@@ -362,4 +374,136 @@ function ModLocal({
 
 function ModVersionText({ version }: { version: string }) {
   return <span className="text-xs text-muted relative -mb-0.5">v{version}</span>
+}
+
+function ModDeleteButton({
+  name,
+  installedModMap,
+}: Partial<ModInfo> & {
+  installedModMap: Map<string, ModInfo>
+}) {
+  const { t } = useTranslation()
+  const deleteMods = useDeleteMods()
+
+  const [isOpen, setIsOpen] = useState(false)
+
+  const [orphanedMods, setOrphanedMods] = useState<ModInfo[]>([])
+  const [selectedOrphans, setSelectedOrphans] = useState<string[]>()
+
+  const modToDelete = installedModMap.get(name)
+  // Find mods that depend on this mod
+  const dependentMods = modToDelete.dependedBy
+
+  useEffect(() => {
+    if (!modToDelete) {
+      return
+    }
+
+    const visited = new Set<string>()
+
+    const checkOrphans = (mod: ModInfo) => {
+      if (visited.has(mod.name)) {
+        return
+      }
+      visited.add(mod.name)
+
+      for (const dep of mod.dependencies) {
+        if ('_missing' in dep) continue
+        const depInfo = installedModMap.get(dep.name)
+        if (!depInfo) continue
+
+        // Check if this dependency will be orphaned after deletion
+        const remainingDependents = depInfo.dependedBy.filter(
+          (m) => m.name !== name && !orphanedMods.includes(m),
+        )
+
+        if (remainingDependents.length === 0 && !orphanedMods.includes(depInfo)) {
+          setOrphanedMods((value) => {
+            return [...value, depInfo]
+          })
+          checkOrphans(depInfo)
+        }
+      }
+    }
+    checkOrphans(modToDelete)
+
+    setSelectedOrphans(orphanedMods.map((m) => m.name))
+  }, [isOpen])
+
+  return (
+    <>
+      <span
+        className="text-danger"
+        title={t('删除 Mod')}
+        onClick={() => {
+          setIsOpen(true)
+        }}
+      >
+        <Icon name="delete" />
+      </span>
+
+      <AlertDialog
+        isOpen={isOpen}
+        onOpenChange={setIsOpen}
+        message={
+          <>
+            {dependentMods.length > 0 && (
+              <div className="warning-section">
+                <div className="warning-title">{t('⚠️ 警告：以下 Mod 依赖此 Mod')}</div>
+                <div className="dependent-mods">
+                  {dependentMods.map((mod) => (
+                    <div key={mod.id + '-' + mod.name} className="dependent-mod">
+                      {mod.name} {mod.version} {mod.enabled ? '' : t('(已禁用)')}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="delete-target">
+              {t('将要删除：')}{' '}
+              <strong>
+                {name} {modToDelete.version}
+              </strong>
+            </div>
+            {orphanedMods.length > 0 && (
+              <div className="orphan-section">
+                <div className="orphan-title">
+                  {t('以下 Mod 将不再被任何 Mod 引用，是否一并删除？')}
+                </div>
+                <div className="orphan-list">
+                  {orphanedMods.map((mod, idx) => (
+                    <label key={mod.id + '-' + mod.name + '-' + idx} className="block">
+                      <input
+                        type="checkbox"
+                        checked={selectedOrphans.includes(mod.name)}
+                        onChange={(e) => {
+                          const target = e.target as HTMLInputElement
+                          if (target.checked) {
+                            setSelectedOrphans([...selectedOrphans, mod.name])
+                          } else {
+                            setSelectedOrphans(selectedOrphans.filter((n) => n !== mod.name))
+                          }
+                        }}
+                      />
+                      <span>
+                        {mod.name} {mod.version}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        }
+        title={t('删除 Mod 确认')}
+        status="danger"
+        onOk={() => {
+          const modsToDelete = [name, ...selectedOrphans]
+          deleteMods(modsToDelete)
+        }}
+        cancelText={t('取消')}
+        okText={t('确认删除')}
+      />
+    </>
+  )
 }

@@ -83,13 +83,30 @@ export interface BackendModInfo {
   size: number
 }
 
-export const useInstalledMods = create<{
+const useInstalledModsStore = create<{
   installedMods: BackendModInfo[]
   setInstalledMods: (installedMods: BackendModInfo[]) => void
 }>((set) => ({
   installedMods: [],
   setInstalledMods: (installedMods: BackendModInfo[]) => set({ installedMods }),
 }))
+
+export function useInstalledMods() {
+  const { installedMods, setInstalledMods } = useInstalledModsStore()
+  const modsPaths = useModsPath()
+
+  function reloadMods() {
+    callRemote('get_installed_mods', modsPaths).then((mods: BackendModInfo[]) => {
+      setInstalledMods(mods)
+    })
+  }
+
+  return {
+    installedMods,
+    setInstalledMods,
+    reloadMods,
+  }
+}
 
 export const useCurrentEverestVersion = create<{
   currentEverestVersion: string
@@ -201,6 +218,10 @@ export const [initGamePath, useGamePath] = createPersistedState<string>(
     await st.save()
   },
 )
+export function useModsPath() {
+  const [gamePath] = useGamePath()
+  return gamePath + '/Mods'
+}
 
 export const [initUseMultiThread, useUseMultiThread] = createPersistedStateByKey(
   'useMultiThread',
