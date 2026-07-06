@@ -227,10 +227,11 @@ export default function Home() {
           <Icon name="file" /> {t('Profile 选择')}
         </Heading>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-2">
+        <div className="flex flex-wrap gap-3 mt-2">
           {profiles.map((v) => (
             <ProfileCard
               key={v.name}
+              className="min-w-40"
               name={v.name}
               mods={v.mods}
               gamePaths={gamePaths}

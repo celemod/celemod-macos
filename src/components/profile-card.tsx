@@ -10,9 +10,17 @@ interface Props extends Omit<ModBlacklistProfile, 'mod_options_order'> {
   lastUseMap: Record<string, number>
   setLastUseMap: React.Dispatch<React.SetStateAction<Record<string, number>>>
   gamePaths: string[]
+  className?: string
 }
 
-export function ProfileCard({ name, mods, lastUseMap, setLastUseMap, gamePaths }: Props) {
+export function ProfileCard({
+  name,
+  mods,
+  lastUseMap,
+  setLastUseMap,
+  gamePaths,
+  className,
+}: Props) {
   const [gamePath] = useGamePath()
   const { blacklist } = useGlobalContext()
   const { currentProfileName } = useCurrentBlacklistProfile()
@@ -33,7 +41,7 @@ export function ProfileCard({ name, mods, lastUseMap, setLastUseMap, gamePaths }
 
   return (
     <Card
-      className={`p-3 transition-colors ${name === currentProfileName ? 'ring-2 ring-accent' : ''}`}
+      className={`p-3 transition-colors cursor-default ${name === currentProfileName ? 'ring-2 ring-accent' : ''} ${className ?? ''}`}
       onClick={() => {
         blacklist.switchProfile(name)
       }}
