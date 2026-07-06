@@ -13,7 +13,7 @@ import {
 import { useEffect } from 'react'
 import { Checkbox, Select, ListBox, Heading, Button } from '@heroui/react'
 import { useTranslation } from 'react-i18next'
-import { useAlert } from 'src/components/alert'
+import { useAlertDialog } from 'src/components/alert-dialog'
 import { ProfileCard } from 'src/components/profile-card'
 
 export default function Home() {
@@ -79,7 +79,7 @@ export default function Home() {
 
   const [alwaysOnMods] = useAlwaysOnMods()
 
-  const alert = useAlert()
+  const alert = useAlertDialog()
   useEffect(() => {
     if (!currentProfile || !gamePath) return
 

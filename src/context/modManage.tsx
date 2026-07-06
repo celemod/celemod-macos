@@ -3,7 +3,7 @@ import { useInstalledMods, useGamePath, useStorage, initGamePath, initModComment
 import { useEffect } from 'react'
 import { toast } from '@heroui/react'
 import { useTranslation } from 'react-i18next'
-import { useAlert } from 'src/components/alert'
+import { useAlertDialog } from 'src/components/alert-dialog'
 
 let lastGamePath = ''
 export const createModManageContext = () => {
@@ -25,7 +25,7 @@ export const createModManageContext = () => {
 
   initGamePath()
 
-  const alert = useAlert()
+  const alert = useAlertDialog()
 
   const ctx = {
     reloadMods: async () => {

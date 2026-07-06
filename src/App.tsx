@@ -10,7 +10,7 @@ import { createDownloadContext } from './context/download'
 import { useEverestCtx as createEverestContext } from './context/everest'
 import { createBlacklistContext } from './context/blacklist'
 import { NavSidebar } from './components/nav-sidebar'
-import { AlertProvider } from './components/alert'
+import { AlertDialogProvider } from './components/alert-dialog'
 const RecommendMods = lazy(() => import('./routes/RecommendMods'))
 const Everest = lazy(() => import('./routes/Everest'))
 const Manage = lazy(() => import('./routes/Manage'))
@@ -64,7 +64,7 @@ const AppLayout = () => {
 
   return (
     <Fragment>
-      <AlertProvider />
+      <AlertDialogProvider />
       <Toast.Provider placement="top" />
       {/* @ts-ignore */}
       <GlobalContext.Provider

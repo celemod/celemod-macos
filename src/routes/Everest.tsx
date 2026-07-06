@@ -7,7 +7,7 @@ import { Button } from '../components/Button'
 import { useGlobalContext } from '../App'
 import { ProgressIndicator } from '../components/Progress'
 import { useTranslation } from 'react-i18next'
-import { useAlert } from 'src/components/alert'
+import { useAlertDialog } from 'src/components/alert-dialog'
 import { Input } from '@heroui/react'
 
 interface Maddie480EverestVersion {
@@ -135,7 +135,7 @@ export default function Everest() {
       .then((v) => setEverestData(v))
   }, [])
 
-  const alert = useAlert()
+  const alert = useAlertDialog()
   const [manualVersion, setManualVersion] = useState(currentEverestVersion || '')
   const showManualVersionAlert = () => {
     alert({
